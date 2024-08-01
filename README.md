@@ -1,1 +1,1 @@
-Read me file
+This project aims to display connections between soccer players in the database found at [this link](https://www.footballsquads.co.uk/archive.htm) using two different graph algorithms which can be compared to one another.
