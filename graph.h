@@ -9,11 +9,12 @@ using namespace std;
 
 class Graph{
 private:
+
+
+public:
     unordered_map<string, int> name_dob_to_int;
     unordered_map<int, string> int_to_name_dob;
     unordered_map<int, vector<pair<int, float>>> adjacency_list;
-
-public:
     //default constructor
     Graph() = default;
 
@@ -85,9 +86,15 @@ public:
                             curr = predecessors[curr];
                         }
                         //First element of return vector indicates outcome
-                        path.push_back("successful");
+                        //path.push_back("successful");
+                        cout << "successful bfs find" << endl;
                         //Reverse the order of vertices in the path because they were added back to front
                         reverse(path.begin(), path.end());
+
+                        for(auto s: path){
+                            cout << s << " ";
+                        }
+                        cout << endl;
                         return path;
                     }
                     //At a vertex along the path
