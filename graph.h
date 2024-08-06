@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 #include <queue>
-#include <iostream>
-#include <fstream>
 
 using namespace std;
 
@@ -136,5 +134,63 @@ public:
         }
 
         file.close();
+    }
+
+    //got code from stepik problem
+    vector<string> dijkstra(string start, string end){
+        vector<string> path;
+        unordered_map<int, int> prevNode;
+        unordered_map<int, float> distance;
+
+        //pair<int, int> : distance, node
+        priority_queue<pair<float, int>, vector<pair<float, int>>, greater<pair<float,int>> > pq;
+        int sourceNum = name_dob_to_int[start];
+        int endNum = name_dob_to_int[end];
+
+        if (name_dob_to_int.find(start) == name_dob_to_int.end() || name_dob_to_int.find(end) == name_dob_to_int.end()) {
+            cout << "player not found" << endl;
+            path.push_back("player not found");
+            return path;
+        }
+
+
+        //setting all distances and prevNodes
+        for(auto node: name_dob_to_int){
+
+            prevNode[node.second] = -1;
+            distance[node.second] = INT_MAX;
+        }
+
+        pq.push(make_pair(0, sourceNum));
+        distance[sourceNum] = 0;
+
+        while(!pq.empty()){
+            pair<int, int> curr = pq.top();
+            pq.pop();
+
+            //get current node
+            int u = curr.second;
+
+            //look at each neighbor
+            for(auto it: adjacency_list[u]){
+                int v = it.first; // the neighbor
+                float w = 1/it.second; //the inverted weight: The larger the weight the closer the nodes should be
+
+                if(distance[v] > distance[u] + w){
+                    distance[v] = distance[u] + w;
+                    prevNode[v] = u;
+                    pq.push(make_pair(distance[v], v));
+                }
+            }
+        }
+
+        // Making path from end to start using prevNode map
+        for (int at = endNum; at != -1; at = prevNode[at]) {
+            path.push_back(int_to_name_dob[at]);
+        }
+        reverse(path.begin(), path.end());
+
+        return path;
+
     }
 };
