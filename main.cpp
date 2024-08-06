@@ -29,6 +29,9 @@ int main(){
     Graph graph;
     graph.insertEdge("Messi", "Neymar");
     graph.insertEdge("Neymar", "Vini");
+    graph.insertEdge("Messi", "Neymar");
+    graph.insertEdge("Neymar", "Carlos");
+
 
     graph.displayGraph();
 
@@ -58,16 +61,17 @@ int main(){
             </head>
             <body>
                 <h1>Find the connections between players</h1>
-                <form id="bfsForm">
+                <form id="algorithmForm">
                     <label for="start">First Player:</label>
                     <input type="text" id="start" name="start" required><br><br>
                     <label for="end">Second Player:</label>
                     <input type="text" id="end" name="end" required><br><br>
                     <input type="submit" value="Submit">
                 </form>
-                <div id="graph"></div>
+                <div id="graphBFS"></div>
+                <div id="graphDijkstra"></div>
                 <script>
-                    document.getElementById('bfsForm').onsubmit = async function(event) { //states where to get inputs later
+                    document.getElementById('algorithmForm').onsubmit = async function(event) { //states where to get inputs later
                         // will be done on submission hence "onsubmit"
                         event.preventDefault(); //by default the page refreshes
                         console.log('Form submitted');
@@ -77,7 +81,15 @@ int main(){
                         let end = document.getElementById('end').value;
 
                         // Sending start and end information to server
-                        let initialDataFormat = await fetch('/bfs', {  //await is used to wait for the decision of the fetch to be resolved(AKA not pending status)
+                        let bfsData = await fetchGraphData('/bfs', start, end);
+                        let dijkstraData = await fetchGraphData('/dijkstra', start, end);
+
+                        if (bfsData) visualizeGraph(bfsData, 'graphBFS');
+                        if (dijkstraData) visualizeGraph(dijkstraData, 'graphDijkstra');
+                    };
+
+                    async function fetchGraphData(endpoint, start, end) {
+                        let initialDataFormat = await fetch(endpoint, {  //await is used to wait for the decision of the fetch to be resolved(AKA not pending status)
                             //fetch sends request and this specifies the method for the request
                             method: 'POST',
 
@@ -89,26 +101,21 @@ int main(){
 
                         // Checking if the request was successful
                         if (!initialDataFormat.ok) {
-                            console.error('Failed the fetch');
-                            return;
+                            console.error('Failed the fetch', endpoint);
+                            return null;
                         }
 
-                        // Parsing the JSON initialDataFormat
-                        let result = await initialDataFormat.json();
-                        //if you inspect the console of the webpage and look for this ouput you can see the way the info is organized
-                        console.log('Result from server:', result);
+                        return await initialDataFormat.json();
+                    }
 
-                        // Visualizing the graph with the received data
-                        visualizeGraph(result);
-                    };
 
-                    function visualizeGraph(data) {
-                        document.getElementById('graph').innerHTML = '';
+                    function visualizeGraph(data, graphID) {
+                        document.getElementById(graphID).innerHTML = '';
 
                         const width = 800;
                         const height = 600;
 
-                        const svg = d3.select("#graph").append("svg")
+                        const svg = d3.select(`#${graphID}`).append("svg")
                                       .attr("width", width)
                                       .attr("height", height);
 
@@ -130,7 +137,7 @@ int main(){
 
                         console.log('Links:', links);
 
-                        const distanceScalingFactor = 250;  // Adjust this factor to scale the link lengths more distinctly
+                        const distanceScalingFactor = 200;  // Adjust this factor to scale the link lengths more distinctly
 
                         const simulation = d3.forceSimulation(nodes)
                                              .force("link", d3.forceLink(links).id(d => d.id).distance(d => {
@@ -227,6 +234,56 @@ int main(){
 
         return crow::response(result.dump());
 
+    });
+
+    //Route to handle Dijkstra request
+    CROW_ROUTE(app, "/dijkstra").methods(crow::HTTPMethod::POST)([&graph](const crow::request& req) {
+        auto form_data = parseFormData(req.body);
+        auto start_iter = form_data.find("start");
+        auto end_iter = form_data.find("end");
+
+        cout << "Received Dijkstra request with data: " << req.body << endl;
+        if (start_iter == form_data.end() || end_iter == form_data.end()) {
+            cout << "Missing start or end node" << endl;
+            return crow::response(400, "Bad Request: Missing input");
+        }
+
+        string start = start_iter->second;
+        string end = end_iter->second;
+
+        cout << "Start node: " << start << ", End node: " << end << endl;
+
+        if (graph.dijkstra(start, end).empty()) {
+            cout << "Invalid nodes provided" << endl;
+            return crow::response(400, "Bad Request: Invalid nodes");
+        }
+
+        vector<string> path = graph.dijkstra(start, end);
+
+        cout << "Dijkstra Path: ";
+        for (const auto& node : path) {
+            cout << node << " ";
+        }
+        cout << endl;
+
+        // Preparing for visualization
+        json result;
+        result["nodes"] = path;
+        result["links"] = json::array();
+        for (size_t i = 0; i < path.size() - 1; ++i) {
+            string source = path[i];
+            string target = path[i + 1];
+            float weight = 0;
+            for (const auto& neighbor : graph.adjacency_list[graph.name_dob_to_int[source]]) {
+                if (neighbor.first == graph.name_dob_to_int[target]) {
+                    weight = neighbor.second;
+                    break;
+                }
+            }
+            result["links"].push_back({{"source", source}, {"target", target}, {"weight", weight}});
+        }
+
+        return crow::response(result.dump());
     });
 
     app.port(1555).multithreaded().run();
