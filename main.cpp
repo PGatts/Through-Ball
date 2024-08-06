@@ -27,11 +27,7 @@ unordered_map<string, string> parseFormData(const string& body) {
 
 int main(){
     Graph graph;
-    graph.insertEdge("Messi", "Neymar");
-    graph.insertEdge("Neymar", "Vini");
-
-    graph.displayGraph();
-
+    graph.read_csv("through_ball_edge_list.csv");
     crow::SimpleApp app;
 
     CROW_ROUTE(app, "/")([](){

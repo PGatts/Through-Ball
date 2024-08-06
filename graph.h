@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <queue>
+#include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -118,7 +120,21 @@ public:
             }
             cout << endl;
         }
+    }
 
+    void read_csv(string filepath){
+        //open the file
+        ifstream file(filepath);
+        string line;
 
-    };
+        //read the file line by line
+        while(getline(file, line)){
+            int index = line.find(',');
+            string from = line.substr(0, index);
+            string to = line.substr(index + 1);
+            this->insertEdge(from, to);
+        }
+
+        file.close();
+    }
 };
