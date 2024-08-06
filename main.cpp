@@ -30,7 +30,7 @@ int main(){
     graph.read_csv("through_ball_edge_list.csv");
 
     crow::SimpleApp app;
-
+    //TEsting if changing the code will let me recommit
     CROW_ROUTE(app, "/")([](){
         return R"(
             <!DOCTYPE html>
@@ -38,7 +38,7 @@ int main(){
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>BFS Visualization</title>
+                <title>BFS and Dijkstra Visualization</title>
                 <script src="https://d3js.org/d3.v7.min.js"></script>
                 <style>
                     .node {
@@ -48,7 +48,20 @@ int main(){
                     .link {
                         stroke: #999;
                         stroke-opacity: 0.6;
-                        stroke-width: 3
+                        stroke-width: 3;
+                    }
+                    .container {
+                        display: flex;
+                        justify-content: center; /* Center the graphs horizontally */
+                        gap: 40px; /* Space between the graphs */
+                    }
+                    .graph-container {
+                        text-align: center; /* Center text inside graph containers */
+                        width: 600px; /* Set width for each graph */
+                    }
+                    .graph {
+                        width: 600px; /* Set width for each graph */
+                        height: 600px; /* Set height for each graph */
                     }
                 </style>
 
@@ -62,8 +75,18 @@ int main(){
                     <input type="text" id="end" name="end" required><br><br>
                     <input type="submit" value="Submit">
                 </form>
-                <div id="graphBFS"></div>
-                <div id="graphDijkstra"></div>
+                <div class="container">
+                    <div id="graphBFS" class="graph-container">
+                        <h2>Breadth First Search</h2>
+                        <div class="graph"></div> <!-- Graph for BFS -->
+                        <div id="bfsPath"></div> <!-- Space for BFS path -->
+                    </div>
+                    <div id="graphDijkstra" class="graph-container">
+                        <h2>Dijkstra's Algorithm</h2>
+                        <div class="graph"></div> <!-- Graph for Dijkstra -->
+                        <div id="dijkstraPath"></div> <!-- Space for Dijkstra path -->
+                    </div>
+                </div>
                 <script>
                     document.getElementById('algorithmForm').onsubmit = async function(event) { //states where to get inputs later
                         // will be done on submission hence "onsubmit"
@@ -78,8 +101,14 @@ int main(){
                         let bfsData = await fetchGraphData('/bfs', start, end);
                         let dijkstraData = await fetchGraphData('/dijkstra', start, end);
 
-                        if (bfsData) visualizeGraph(bfsData, 'graphBFS');
-                        if (dijkstraData) visualizeGraph(dijkstraData, 'graphDijkstra');
+                        if (bfsData){
+                            visualizeGraph(bfsData, 'graphBFS', 'blue');
+                            displayPath(bfsData, 'bfsPath'); // Show BFS path
+                        }
+                        if (dijkstraData){
+                            visualizeGraph(dijkstraData, 'graphDijkstra', 'red');
+                            displayPath(dijkstraData, 'dijkstraPath'); // Show Dijkstra path
+                        }
                     };
 
                     async function fetchGraphData(endpoint, start, end) {
@@ -103,21 +132,22 @@ int main(){
                     }
 
 
-                    function visualizeGraph(data, graphID) {
-                        document.getElementById(graphID).innerHTML = '';
+                    function visualizeGraph(data, graphID, nodeColor) {
+                        document.getElementById(graphID).querySelector('.graph').innerHTML = ''; //clear last graph
 
-                        const width = 800;
+                        //Graphs positioning
+                        const width = 600;
                         const height = 600;
 
-                        const svg = d3.select(`#${graphID}`).append("svg")
+                        const svg = d3.select(`#${graphID} .graph`).append("svg")
                                       .attr("width", width)
                                       .attr("height", height);
 
-                        // Convert nodes to objects with initial positions and some random jitter
+                        // Makes nodes to objects with initial positions and some random jitter
                         const nodes = data.nodes.map(node => ({
                             id: node,
-                            x: width / 2 + (Math.random() - 0.5) * width * 0.2,
-                            y: height / 2 + (Math.random() - 0.5) * height * 0.2
+                            x: width / 2+(Math.random() - 0.5) * width * 0.2,
+                            y: height / 2+(Math.random() - 0.5) * height * 0.2
                         }));
 
                         console.log('Nodes:', nodes);
@@ -126,16 +156,16 @@ int main(){
                         const links = data.links.map(link => ({
                             source: link.source,
                             target: link.target,
-                            weight: link.weight || 1
+                            weight: link.weight || 1 //defaults to 1, VERY IMPORTANTt!!
                         }));
 
                         console.log('Links:', links);
 
-                        const distanceScalingFactor = 200;  // Adjust this factor to scale the link lengths more distinctly
+                        const distanceScalingFactor = 250;  // Adjust this factor to scale the link lengths more distinctly
 
                         const simulation = d3.forceSimulation(nodes)
                                              .force("link", d3.forceLink(links).id(d => d.id).distance(d => {
-                                                 const distance = (1 / Math.sqrt(d.weight)) * distanceScalingFactor;
+                                                 const distance = (1 / (d.weight * d.weight)) * distanceScalingFactor;
                                                  console.log(`Link from ${d.source.id} to ${d.target.id} with weight ${d.weight} has distance ${distance}`);
                                                  return distance;
                                              }))
@@ -149,7 +179,7 @@ int main(){
                                         .selectAll("line")
                                         .data(links)
                                         .enter().append("line")
-                                        .attr("class", "link")
+                                        .attr("class", "link");
                                         //.attr("stroke-width", d => d.weight * 2); //Changing width based on weight if we want
 
                         const node = svg.append("g")
@@ -159,7 +189,7 @@ int main(){
                                         .enter().append("circle")
                                         .attr("class", "node")
                                         .attr("r", 20)
-                                        .attr("fill", "blue");
+                                        .attr("fill", nodeColor);
 
                         simulation.on("tick", () => {
                             link.attr("x1", d => d.source.x)
@@ -170,6 +200,14 @@ int main(){
                             node.attr("cx", d => d.x)
                                 .attr("cy", d => d.y);
                         });
+                    }
+                    //Display the path under the graph
+                    function displayPath(data, elementId) {
+
+                        let pathContainer = document.getElementById(elementId);
+                        pathContainer.innerHTML = ''; // Clear previous path
+                        let path = data.nodes.join(' -> '); // Create a string with the path
+                        pathContainer.innerHTML = `<p><strong>Path:</strong> ${path}</p>`;
                     }
                 </script>
 
