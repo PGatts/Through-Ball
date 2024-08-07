@@ -122,8 +122,12 @@ public:
 
     void read_csv(string filepath){
         //open the file
-
         ifstream file(filepath);
+
+        if (!file.is_open()) {
+            cout << "Error: Could not open the file " << filepath << endl;
+            return;
+        }
         string line;
 
         //gets rid of first line "from, to"
