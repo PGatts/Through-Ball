@@ -27,10 +27,10 @@ unordered_map<string, string> parseFormData(const string& body) {
 
 int main(){
     Graph graph;
-    graph.read_csv("through_ball_edge_list.csv");
+    graph.read_csv("../through_ball_edge_list.csv");
 
     crow::SimpleApp app;
-    //TEsting if changing the code will let me recommit
+    //Testing if changing the code will let me recommit
     CROW_ROUTE(app, "/")([](){
         return R"(
             <!DOCTYPE html>
@@ -161,7 +161,7 @@ int main(){
 
                         console.log('Links:', links);
 
-                        const distanceScalingFactor = 250;  // Adjust this factor to scale the link lengths more distinctly
+                        const distanceScalingFactor = 350;  // Adjust this factor to scale the link lengths more distinctly
 
                         const simulation = d3.forceSimulation(nodes)
                                              .force("link", d3.forceLink(links).id(d => d.id).distance(d => {

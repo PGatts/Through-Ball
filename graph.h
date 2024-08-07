@@ -122,8 +122,13 @@ public:
 
     void read_csv(string filepath){
         //open the file
+
         ifstream file(filepath);
         string line;
+
+        //gets rid of first line "from, to"
+
+        getline(file, line);
 
         //read the file line by line
         while(getline(file, line)){
@@ -174,7 +179,7 @@ public:
             //look at each neighbor
             for(auto it: adjacency_list[u]){
                 int v = it.first; // the neighbor
-                float w = 1/it.second; //the inverted weight: The larger the weight the closer the nodes should be
+                float w = 1/(it.second * it.second); //the inverted weight: The larger the weight the closer the nodes should be
 
                 if(distance[v] > distance[u] + w){
                     distance[v] = distance[u] + w;
