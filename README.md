@@ -6,5 +6,9 @@ brew install crowdin
 brew install asio
 brew install nlohmann-json
 Then insert the csv found in 'link.txt' in the project.
+If you get a message saying "Error: Could not open the file " when you run the code.
+Try going to the main.cpp file in the main function and where it says "../through_ball_edge_list.csv", delete the "../"
+
+
 
 
